@@ -1,0 +1,26 @@
+copado__Metadata_Group__c allMetadata = new copado__Metadata_Group__c ();
+allMetadata.Name = 'All Metadata Types';
+insert allMetadata;
+
+
+
+List<copado__Metadata_Group_Item__c> items = new List<copado__Metadata_Group_Item__c>();
+
+
+
+Schema.DescribeFieldResult typeResult = copado__Metadata_Group_Item__c.copado__Type__c.getDescribe();
+List<Schema.PicklistEntry> ple = typeResult.getPicklistValues();
+
+
+
+for( Schema.PicklistEntry f : ple) {
+   copado__Metadata_Group_Item__c item = new copado__Metadata_Group_Item__c();
+   item.copado__Type__c = f.getValue();
+   item.copado__Metadata_Group__c = allMetadata.Id;
+   item.copado__Operator__c = 'All';
+   items.add(item);
+}   
+
+
+
+insert items;
