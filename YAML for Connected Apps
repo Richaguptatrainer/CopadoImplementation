@@ -1,0 +1,59 @@
+## Copado YML repository settings
+# This file will allow users to process files within a repository
+# A use case for this is to remove offending XML tags that will make a file not deployable.
+# E.g. remove all ManageSandbox user permissions from a profile, since this user permission 
+# only exists on production environments and will fail when trying to be deployed to sandboxes.
+# E.g. remove FLS of deprecated fields, etc
+
+## YML Considerations for application
+# YML reg-ex bases and rules can be applied to ANY file in the repository, however the regular use case are profiles, permission sets and objects.
+# Those rules operate on files during commit and deployment, and remove or replace references. Depending on the file type a removal can have different consequences upon deployment.
+# e.g. removing the reference to a class in a profile will not change the existing access to this class upon deployment. 
+# However, if a reference is removed from a permission set, the access level upon deployment will be set to false.
+# Similar, if a field reference is removed from a layout, this field will disappear upon deployment from the layout.
+
+## some details and mechanisms, which will be used in the examples
+# the reg ex engine applied is Perl, please find more documentation here:https://perldoc.perl.org/perlre.html
+# you can check your expressions upfront with web resources, e.g. here: http://www.regexplanet.com/advanced/perl/index.html
+# wild cards should be expressed in a non-greedy way to avoid that the engine matches more than planned. an example to match any character non greedy is: .*?
+# this is useful for removing managed package items, as managed packages have a prefix: e.g. packagePrefix__.*? 
+# In order to not only remove, but also replace, however the functionality and therefore the application is highly limited.
+# Currently it is most useful, when changing API versions in pages and classes
+
+### regex_lib or base reg ex expressions.
+# in the regex_lib sections, a base reg ex expression is defined. This is to avoid unnecessary typing and allow for easier maintenance.
+# those base reg ex expressions define the scope (e.g. fields, user permissions) are referenced by rules
+regex_lib:
+    user-permission: '(?s)(\n\s*<userPermissions>(?:(?!<userPermissions>).)*?<name>___REPLACEVALUE___</name>(?:(?!<userPermissions>).)*?</userPermissions>)'
+    remove-simple-tag: '(?s)(\n\s*<___REPLACEVALUE___>[\s\S]*?</___REPLACEVALUE___>)'
+    object-permission: '(?s)(\n\s*<objectPermissions>(?:(?!<objectPermissions>).)*?<object>___REPLACEVALUE___</object>(?:(?!<objectPermissions>).)*?</objectPermissions>)'
+
+## further useful reg ex base expressions. to use them, remove # at line start and move above this comment after the last reg ex base:
+#    field: '(?s)(\n\s*<fields>(?:(?!<fields>).)*?<fullName>___REPLACEVALUE___</fullName>(?:(?!<fields>).)*?</fields>)'
+#    field-permission: '(?s)(\n\s*<fieldPermissions>(?:(?!<fieldPermissions>).)*?<field>___REPLACEVALUE___</field>(?:(?!<fieldPermissions>).)*?</fieldPermissions>)'
+#    class-permission: '(?s)(\n\s*<classAccesses>(?:(?!<classAccesses>).)*?<apexClass>___REPLACEVALUE___</apexClass>(?:(?!<classAccesses>).)*?</classAccesses>)'
+#    app-permission: '(?s)(\n\s*<applicationVisibilities>(?:(?!<applicationVisibilities>).)*?<application>___REPLACEVALUE___</application>(?:(?!<applicationVisibilities>).)*?</applicationVisibilities>)'
+#    tab-permission: '(?s)(\n\s*<tabSettings>(?:(?!<tabSettings>).)*?<tab>___REPLACEVALUE___</tab>(?:(?!<tabSettings>).)*?</tabSettings>)'
+#    page-permission: '(?s)(\n\s*<pageAccesses>(?:(?!<pageAccesses>).)*?<apexPage>___REPLACEVALUE___</apexPage>(?:(?!<pageAccesses>).)*?</pageAccesses>)'
+#    recordtype-permission: '(?s)(\n\s*<recordTypeVisibilities>(?:(?!<recordTypeVisibilities>).)*?<recordType>___REPLACEVALUE___</recordType>(?:(?!<recordTypeVisibilities>).)*?</recordTypeVisibilities>)'
+#    field-translation: '(?s)(\n\s*<fields>(?:(?!<fields>).)*?<name>___REPLACEVALUE___</name>(?:(?!<fields>).)*?</fields>)'
+#    apiVersion-tag: '(?s)(\n\s*<apiVersion>___REPLACEVALUE___</apiVersion>)'
+#    validationRulesByActiveTag: '(?s)(\n\s*<validationRules>(?:(?!<validationRules>).)*?<active>___REPLACEVALUE___</active>(?:(?!<validationRules>).)*?</validationRules>)'
+#    validationRulesByNameTag: '(?s)(\n\s*<validationRules>(?:(?!<validationRules>).)*?<fullName>___REPLACEVALUE___</fullName>(?:(?!<validationRules>).)*?</validationRules>)'
+
+# rules provide context to which files a reg ex should be applied, on which branch and what to do with the finding. replace or remove. 
+# in addition rules sharpen the broader scope of the base reg ex towards a single or specific set of items.
+# e.g. the reg ex base scopes findings to fields. A rule will define which fields in which objects should be deleted or replaced.
+rules:
+
+    ## Remove consumerKey from ConnectedApps
+    ## Use Case: Remove all consumerKey from ConnectedApps per SF MDAPI Developer Guide - Special Behavior, in order to handle allow them to generate upon Create
+    # this will be performed when committing from or deploying to any environment/branch in the Pipeline 
+    remove-all-consumerKey:
+        extensions:
+            - connectedApp
+        regex_name: 'remove-simple-tag'
+        replace_values:
+            - consumerKey
+        replace_with: 
+        branches:
