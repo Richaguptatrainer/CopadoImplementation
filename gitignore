@@ -16,6 +16,10 @@ installedPackages/*
 #since there is no need to track them in Git, like for example:
 
 classes/copado__*
+components/copado__*
+flows/copado__*
+staticresources/copado__*
+tabs/copado__*
 triggers/copado__*
 pages/copado__*
 
