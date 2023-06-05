@@ -52,7 +52,6 @@ rules:
     remove-all-user-permissions:
         extensions:
             - profile
-            - permissionset
         regex_name: 'remove-simple-tag'
         replace_values:
             - userPermissions
